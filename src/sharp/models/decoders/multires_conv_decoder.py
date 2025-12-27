@@ -90,7 +90,7 @@ class MultiresConvDecoder(BaseDecoder):
         self.grad_checkpointing: bool = grad_checkpointing
 
     @torch.jit.ignore
-    def set_grad_checkpointing(self, is_enabled=True) -> None:
+    def set_grad_checkpointing(self, is_enabled: bool=True) -> None:
         """Enable grad checkpointing."""
         self.grad_checkpointing = is_enabled
 
