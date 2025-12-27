@@ -7,7 +7,7 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 from __future__ import annotations
 
 import logging
-from typing import Final
+from typing import Final, override
 
 import timm
 import torch
@@ -69,8 +69,6 @@ class TimmViT(timm.models.VisionTransformer):
         intermediate_features = {}
 
         x = self.patch_embed(input_tensor)
-        batch_size, seq_len, _ = x.shape
-
         x = self._pos_embed(x)
         x = self.patch_drop(x)
         x = self.norm_pre(x)
