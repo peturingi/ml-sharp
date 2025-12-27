@@ -7,13 +7,14 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 from __future__ import annotations
 
 import logging
+from typing import Final
 
 import timm
 import torch
 
 from sharp.models.presets.vit import VIT_CONFIG_DICT, ViTConfig, ViTPreset
 
-LOGGER = logging.getLogger(__name__)
+LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class TimmViT(timm.models.VisionTransformer):
