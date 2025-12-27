@@ -8,19 +8,16 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Final
 
 import click
 import torch
 import torch.utils.data
-from torch import Tensor
 
 from sharp.utils import camera, gsplat, io
 from sharp.utils import logging as logging_utils
-from sharp.utils.camera import TrajectoryParams, PinholeCameraModel
 from sharp.utils.gaussians import Gaussians3D, SceneMetaData, load_ply
 
-LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @click.command()
@@ -49,20 +46,18 @@ def render_cli(input_path: Path, output_path: Path, verbose: bool):
 
     output_path.mkdir(exist_ok=True, parents=True)
 
-    params: Final[TrajectoryParams] = camera.TrajectoryParams()
+    params = camera.TrajectoryParams()
 
     if input_path.suffix == ".ply":
-        scene_paths: Final[list[Path]] = [input_path]
+        scene_paths = [input_path]
     elif input_path.is_dir():
-        scene_paths: Final[list[Path]] = list(input_path.glob("*.ply"))
+        scene_paths = list(input_path.glob("*.ply"))
     else:
         LOGGER.error("Input path must be either directory or single PLY file.")
         exit(1)
 
     for scene_path in scene_paths:
         LOGGER.info("Rendering %s", scene_path)
-        gaussians: Gaussians3D
-        metadata: SceneMetaData
         gaussians, metadata = load_ply(scene_path)
         render_gaussians(
             gaussians=gaussians,
@@ -79,10 +74,8 @@ def render_gaussians(
     params: camera.TrajectoryParams | None = None,
 ) -> None:
     """Render a single gaussian checkpoint file."""
-    width: int
-    height: int
-    width, height = metadata.resolution_px
-    f_px: float = metadata.focal_length_px
+    (width, height) = metadata.resolution_px
+    f_px = metadata.focal_length_px
 
     if params is None:
         params = camera.TrajectoryParams()
@@ -90,9 +83,9 @@ def render_gaussians(
     if not torch.cuda.is_available():
         raise RuntimeError("Rendering a checkpoint requires CUDA.")
 
-    device: device = torch.device("cuda")
+    device = torch.device("cuda")
 
-    intrinsics: Final[Tensor] = torch.tensor(
+    intrinsics = torch.tensor(
         [
             [f_px, 0, (width - 1) / 2.0, 0],
             [0, f_px, (height - 1) / 2.0, 0],
@@ -102,17 +95,16 @@ def render_gaussians(
         device=device,
         dtype=torch.float32,
     )
-    camera_model: Final[PinholeCameraModel] = camera.create_camera_model(
+    camera_model = camera.create_camera_model(
         gaussians, intrinsics, resolution_px=metadata.resolution_px
     )
 
-    trajectory: Final[list[torch.Tensor]] = camera.create_eye_trajectory(
+    trajectory = camera.create_eye_trajectory(
         gaussians, params, resolution_px=metadata.resolution_px, f_px=f_px
     )
-    renderer: Final[gsplat.GSplatRenderer] = gsplat.GSplatRenderer(color_space=metadata.color_space)
-    video_writer: Final[io.VideoWriter] = io.VideoWriter(output_path)
+    renderer = gsplat.GSplatRenderer(color_space=metadata.color_space)
+    video_writer = io.VideoWriter(output_path)
 
-    eye_position: torch.Tensor
     for _, eye_position in enumerate(trajectory):
         camera_info = camera_model.compute(eye_position)
         rendering_output = renderer(
