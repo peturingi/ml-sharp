@@ -10,7 +10,7 @@ from . import predict, render
 
 
 @click.group()
-def main_cli() -> None:
+def main_cli():
     """Run inference for SHARP model."""
     pass
 
