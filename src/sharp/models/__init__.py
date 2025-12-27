@@ -24,7 +24,7 @@ def create_predictor(params: PredictorParams) -> RGBGaussianPredictor:
     """Create gaussian predictor model specified by name."""
     if params.gaussian_decoder.stride < params.initializer.stride:
         raise ValueError(
-            "We donot expected gaussian_decoder has higher resolution than initializer."
+            "We do not expected gaussian_decoder has higher resolution than initializer."
         )
 
     scale_factor = params.gaussian_decoder.stride // params.initializer.stride
