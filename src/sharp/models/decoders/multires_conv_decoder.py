@@ -8,7 +8,7 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 
 from __future__ import annotations
 
-from typing import Iterable, Final
+from typing import Iterable
 
 import torch
 import torch.nn as nn
@@ -38,30 +38,30 @@ class MultiresConvDecoder(BaseDecoder):
             upsampling_mode: What method to use for upsampling.
         """
         super().__init__()
-        self.dims_encoder: Final[list[int]] = list(dims_encoder)
+        self.dims_encoder = list(dims_encoder)
 
-        self.dims_decoder: Final[list[int]] = (
-            list(dims_decoder) if isinstance(dims_decoder, list)
-            else [dims_decoder] * len(self.dims_encoder)
-        )
+        if isinstance(dims_decoder, int):
+            self.dims_decoder = [dims_decoder] * len(self.dims_encoder)
+        else:
+            self.dims_decoder = list(dims_decoder)
 
         if len(self.dims_decoder) != len(self.dims_encoder):
             raise ValueError("Received dims_encoder and dims_decoder of different sizes.")
 
         self.dim_out = self.dims_decoder[0]
 
-        num_encoders: Final[int] = len(self.dims_encoder)
+        num_encoders = len(self.dims_encoder)
 
         # At the highest resolution, i.e. level 0, we apply projection w/ 1x1 convolution
-        # when the dimensions mismatch. Otherwise, we do not do anything, which is
+        # when the dimensions mismatch. Otherwise we do not do anything, which is
         # the default behavior of monodepth.
-        conv0: Final[nn.Module | nn.Identity] = (
+        conv0 = (
             nn.Conv2d(self.dims_encoder[0], self.dims_decoder[0], kernel_size=1, bias=False)
             if self.dims_encoder[0] != self.dims_decoder[0]
             else nn.Identity()
         )
 
-        convs: Final[list[nn.Module | nn.Identity]] = [conv0]
+        convs = [conv0]
         for i in range(1, num_encoders):
             convs.append(
                 nn.Conv2d(
@@ -73,9 +73,9 @@ class MultiresConvDecoder(BaseDecoder):
                     bias=False,
                 )
             )
-        self.convs: Final[nn.ModuleList] = nn.ModuleList(convs)
+        self.convs = nn.ModuleList(convs)
 
-        fusions: Final[list[FeatureFusionBlock2d]] = []
+        fusions = []
         for i in range(num_encoders):
             fusions.append(
                 FeatureFusionBlock2d(
@@ -85,19 +85,19 @@ class MultiresConvDecoder(BaseDecoder):
                     batch_norm=False,
                 )
             )
-        self.fusions: Final[nn.ModuleList] = nn.ModuleList(fusions)
+        self.fusions = nn.ModuleList(fusions)
 
-        self.grad_checkpointing: bool = grad_checkpointing
+        self.grad_checkpointing = grad_checkpointing
 
     @torch.jit.ignore
-    def set_grad_checkpointing(self, is_enabled=True) -> None:
+    def set_grad_checkpointing(self, is_enabled=True):
         """Enable grad checkpointing."""
         self.grad_checkpointing = is_enabled
 
     def forward(self, encodings: list[torch.Tensor]) -> torch.Tensor:
         """Decode the multi-resolution encodings."""
-        num_levels: Final[int] = len(encodings)
-        num_encoders: Final[int] = len(self.dims_encoder)
+        num_levels = len(encodings)
+        num_encoders = len(self.dims_encoder)
 
         if num_levels != num_encoders:
             raise ValueError(
