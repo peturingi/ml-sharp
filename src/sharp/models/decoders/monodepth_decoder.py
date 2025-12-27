@@ -7,6 +7,7 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Final
 
 from sharp.models.presets import (
@@ -19,7 +20,7 @@ from .multires_conv_decoder import MultiresConvDecoder
 
 def create_monodepth_decoder(
     patch_encoder_preset: ViTPreset,
-    dims_decoder=None,
+    dims_decoder: int | Sequence[int] | None=None,
 ) -> MultiresConvDecoder:
     """Create DepthDensePredictionTransformer model.
 
