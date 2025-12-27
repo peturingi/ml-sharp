@@ -29,8 +29,8 @@ class UNetDecoder(BaseDecoder):
         width: List[int] | int,
         steps: int = 5,
         norm_type: NormLayerName = "group_norm",
-        norm_num_groups: int=8,
-        blocks_per_layer: int=2,
+        norm_num_groups=8,
+        blocks_per_layer=2,
     ) -> None:
         """Initialize UNet Decoder.
 
