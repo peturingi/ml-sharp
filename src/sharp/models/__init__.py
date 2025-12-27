@@ -76,4 +76,5 @@ def create_predictor(params: PredictorParams) -> RGBGaussianPredictor:
 __all__ = [
     "PredictorParams",
     "create_predictor",
+    "RGBGaussianPredictor",
 ]
