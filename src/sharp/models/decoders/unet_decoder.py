@@ -6,7 +6,7 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Final
 
 import torch
 from torch import nn
@@ -29,8 +29,8 @@ class UNetDecoder(BaseDecoder):
         width: List[int] | int,
         steps: int = 5,
         norm_type: NormLayerName = "group_norm",
-        norm_num_groups: int=8,
-        blocks_per_layer: int=2,
+        norm_num_groups: int = 8,
+        blocks_per_layer: int = 2,
     ) -> None:
         """Initialize UNet Decoder.
 
@@ -50,7 +50,7 @@ class UNetDecoder(BaseDecoder):
 
         self.dim_out = dim_out
 
-        self.convs_up = nn.ModuleList()
+        self.convs_up: nn.ModuleList = nn.ModuleList()
 
         self.output_dims: list[int]
         # If only one number is specified, we assume each layer will double the channel dimension.
@@ -59,10 +59,11 @@ class UNetDecoder(BaseDecoder):
         else:
             self.input_dims = width[::-1][: steps + 1]
 
+        i_step: int
         for i_step in range(steps):
             input_width = self.input_dims[i_step]
             current_width = self.input_dims[i_step + 1]
-            convs_up_i = nn.Sequential(
+            convs_up_i: nn.Sequential = nn.Sequential(
                 nn.Upsample(scale_factor=2),
                 residual_block_2d(
                     input_width * (1 if i_step == 0 else 2),
@@ -84,8 +85,8 @@ class UNetDecoder(BaseDecoder):
             input_width = 2 * current_width
             current_width //= 2
 
-        last_width = self.input_dims[-1]
-        self.conv_out = nn.Sequential(
+        last_width: Final[int] = self.input_dims[-1]
+        self.conv_out: nn.Sequential = nn.Sequential(
             norm_layer_2d(last_width * 2, norm_type, num_groups=norm_num_groups),
             nn.ReLU(),
             nn.Conv2d(last_width * 2, dim_out, 1),
@@ -102,7 +103,7 @@ class UNetDecoder(BaseDecoder):
         Returns:
             The output feature map.
         """
-        i_feature_layer = len(features) - 1
+        i_feature_layer: int = len(features) - 1
         out = self.convs_up[0](features[i_feature_layer])
         i_feature_layer -= 1
         for conv_up in self.convs_up[1:]:  # type: ignore
