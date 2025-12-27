@@ -33,7 +33,7 @@ class ViTConfig:
     attn_drop_rate: float = 0.0
     drop_path_rate: float = 0.0
     qkv_bias: bool = True
-    global_pool: str = "avg"
+    global_pool: Literal["", "avg", "avgmax", "max", "token", "map"] = "avg"
 
     # Properties for timm_vit.
     mlp_mode: MLPMode = "vanilla"
