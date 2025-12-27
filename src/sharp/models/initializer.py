@@ -14,7 +14,7 @@ from torch import nn
 from .params import ColorInitOption, DepthInitOption, InitializerParams
 
 
-def create_initializer(params: InitializerParams) -> nn.Module:
+def create_initializer(params: InitializerParams) -> MultiLayerInitializer:
     """Create inpainter."""
     return MultiLayerInitializer(
         num_layers=params.num_layers,
