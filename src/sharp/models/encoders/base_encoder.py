@@ -5,6 +5,7 @@ Copyright (C) 2025 Apple Inc. All Rights Reserved.
 """
 
 import abc
+from typing import Literal
 
 import torch
 from torch import nn
@@ -20,6 +21,6 @@ class BaseEncoder(nn.Module, abc.ABC):
     def forward(self, image: torch.Tensor) -> list[torch.Tensor]:
         """Encode input image into multi-resolution encodings."""
 
-    def internal_resolution(self) -> int:
+    def internal_resolution(self) -> Literal[1536]:
         """Internal resolution of the encoder."""
         return 1536
