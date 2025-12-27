@@ -8,14 +8,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Final, Any
 
 import click
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.utils.data
-from torch import Tensor
 
 from sharp.models import (
     PredictorParams,
@@ -33,9 +31,9 @@ from sharp.utils.gaussians import (
 
 from .render import render_gaussians
 
-LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
-DEFAULT_MODEL_URL: Final[str] = "https://ml-site.cdn-apple.com/models/sharp/sharp_2572gikvuh.pt"
+DEFAULT_MODEL_URL = "https://ml-site.cdn-apple.com/models/sharp/sharp_2572gikvuh.pt"
 
 
 @click.command()
@@ -86,9 +84,9 @@ def predict_cli(
     """Predict Gaussians from input images."""
     logging_utils.configure(logging.DEBUG if verbose else logging.INFO)
 
-    extensions: Final[list[str]] = io.get_supported_image_extensions()
+    extensions = io.get_supported_image_extensions()
 
-    image_paths: list[Path] = []
+    image_paths = []
     if input_path.is_file():
         if input_path.suffix in extensions:
             image_paths = [input_path]
@@ -116,7 +114,6 @@ def predict_cli(
         with_rendering = False
 
     # Load or download checkpoint
-    state_dict: dict[str, Any]
     if checkpoint_path is None:
         LOGGER.info("No checkpoint provided. Downloading default model from %s", DEFAULT_MODEL_URL)
         state_dict = torch.hub.load_state_dict_from_url(DEFAULT_MODEL_URL, progress=True)
@@ -124,7 +121,7 @@ def predict_cli(
         LOGGER.info("Loading checkpoint from %s", checkpoint_path)
         state_dict = torch.load(checkpoint_path, weights_only=True)
 
-    gaussian_predictor: RGBGaussianPredictor = create_predictor(PredictorParams())
+    gaussian_predictor = create_predictor(PredictorParams())
     gaussian_predictor.load_state_dict(state_dict)
     gaussian_predictor.eval()
     gaussian_predictor.to(device)
@@ -133,11 +130,9 @@ def predict_cli(
 
     for image_path in image_paths:
         LOGGER.info("Processing %s", image_path)
-        image: np.ndarray
-        f_px: float
         image, _, f_px = io.load_rgb(image_path)
         height, width = image.shape[:2]
-        intrinsics: Tensor = torch.tensor(
+        intrinsics = torch.tensor(
             [
                 [f_px, 0, (width - 1) / 2.0, 0],
                 [0, f_px, (height - 1) / 2.0, 0],
@@ -147,16 +142,16 @@ def predict_cli(
             device=device,
             dtype=torch.float32,
         )
-        gaussians: Gaussians3D = predict_image(gaussian_predictor, image, f_px, torch.device(device))
+        gaussians = predict_image(gaussian_predictor, image, f_px, torch.device(device))
 
         LOGGER.info("Saving 3DGS to %s", output_path)
         save_ply(gaussians, f_px, (height, width), output_path / f"{image_path.stem}.ply")
 
         if with_rendering:
-            output_video_path: Path = (output_path / image_path.stem).with_suffix(".mp4")
+            output_video_path = (output_path / image_path.stem).with_suffix(".mp4")
             LOGGER.info("Rendering trajectory to %s", output_video_path)
 
-            metadata: SceneMetaData = SceneMetaData(intrinsics[0, 0].item(), (width, height), "linearRGB")
+            metadata = SceneMetaData(intrinsics[0, 0].item(), (width, height), "linearRGB")
             render_gaussians(gaussians, metadata, output_video_path)
 
 
@@ -168,15 +163,14 @@ def predict_image(
     device: torch.device,
 ) -> Gaussians3D:
     """Predict Gaussians from an image."""
-    internal_shape: Final[tuple[int, int]] = (1536, 1536)
+    internal_shape = (1536, 1536)
 
     LOGGER.info("Running preprocessing.")
-    image_pt: Final[Tensor] = torch.from_numpy(image.copy()).float().to(device).permute(2, 0, 1) / 255.0
-    height: Final[int] = image_pt.shape[1]
-    width: Final[int] = image_pt.shape[2]
-    disparity_factor: Final[Tensor] = torch.tensor([f_px / width]).float().to(device)
+    image_pt = torch.from_numpy(image.copy()).float().to(device).permute(2, 0, 1) / 255.0
+    _, height, width = image_pt.shape
+    disparity_factor = torch.tensor([f_px / width]).float().to(device)
 
-    image_resized_pt = F.interoplate(
+    image_resized_pt = F.interpolate(
         image_pt[None],
         size=(internal_shape[1], internal_shape[0]),
         mode="bilinear",
@@ -185,10 +179,10 @@ def predict_image(
 
     # Predict Gaussians in the NDC space.
     LOGGER.info("Running inference.")
-    gaussians_ndc: Final[Gaussians3D] = predictor(image_resized_pt, disparity_factor)
+    gaussians_ndc = predictor(image_resized_pt, disparity_factor)
 
     LOGGER.info("Running postprocessing.")
-    intrinsics: Final[Tensor] = (
+    intrinsics = (
         torch.tensor(
             [
                 [f_px, 0, width / 2, 0],
@@ -200,12 +194,12 @@ def predict_image(
         .float()
         .to(device)
     )
-    intrinsics_resized: Final[Tensor] = intrinsics.clone()
+    intrinsics_resized = intrinsics.clone()
     intrinsics_resized[0] *= internal_shape[0] / width
     intrinsics_resized[1] *= internal_shape[1] / height
 
     # Convert Gaussians to metrics space.
-    gaussians: Final[Gaussians3D] = unproject_gaussians(
+    gaussians = unproject_gaussians(
         gaussians_ndc, torch.eye(4).to(device), intrinsics_resized, internal_shape
     )
 
