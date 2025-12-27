@@ -58,7 +58,8 @@ class TimmViT(timm.models.VisionTransformer):
         embeddings = embeddings.reshape(batch_size, height, width, channel).permute(0, 3, 1, 2)
         return embeddings
 
-    def forward(self, input_tensor: torch.Tensor) -> tuple[torch.Tensor, dict[int, torch.Tensor]]:
+    @override
+    def forward(self, input_tensor: torch.Tensor) -> tuple[torch.Tensor, dict[int, torch.Tensor]]:  # type: ignore[override]
         """Override forwarding with intermediate features.
 
         Adapted from timm ViT.
